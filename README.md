@@ -9,3 +9,4 @@ Gate voltage level is 5V
 CV voltage between 0 and 5V
 Powered from 9V DC
 Switchable note on/off for each step, again this is optional.
+MIDI output
