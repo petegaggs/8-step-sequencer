@@ -1,13 +1,17 @@
 /*
 8 Step Sequencer
+With MIDI output
  */
- 
+#include <MIDI.h>
+MIDI_CREATE_DEFAULT_INSTANCE();
+
 int currentStep = 8;
 unsigned long previousMillis = 0;
 int sequencerStopped = 0;
 int gateOff_ms = 100;
 int gateOn_ms = 0;
 int gateOn = 0;
+int midiNoteNum = 0;
 
 #define STEP1_PIN 2
 #define STEP2_PIN 3
@@ -19,6 +23,7 @@ int gateOn = 0;
 #define STEP8_PIN 9
 #define STEP_RESET_PIN 10
 #define TEMPO_PIN A2
+#define CV_PIN A3 // control voltage
 #define GATE_PIN 15 //A1
 #define GATE_EN_PIN 11
 #define SEL0_PIN 14 //A0
@@ -26,7 +31,8 @@ int gateOn = 0;
 #define SEL2_PIN 12
 
 // the setup routine runs once when you press reset:
-void setup() {                
+void setup() {    
+  MIDI.begin(MIDI_CHANNEL_OMNI);                  
   pinMode(STEP1_PIN, OUTPUT);     
   pinMode(STEP2_PIN, OUTPUT);     
   pinMode(STEP3_PIN, OUTPUT);     
@@ -139,13 +145,32 @@ int getTempo() {
 void setGate(int onOff) {
   if (onOff) {
     if (digitalRead(GATE_EN_PIN) == 1) {
+      MIDI.sendNoteOn(midiNoteNum,127,1);
       digitalWrite(GATE_PIN, HIGH);
     }
     gateOn = 1;
   }
   else {
+    MIDI.sendNoteOn(midiNoteNum,0,1); // note off
     digitalWrite(GATE_PIN, LOW);
     gateOn = 0;
+  }
+}
+
+void getControlVoltage() {
+  // read the analogue control voltage and compute midi note number
+  // midi note range is 21-84
+  midiNoteNum = (analogRead(CV_PIN) >> 4) + 21;
+}
+
+void sendNote(int onOff) {
+  // midi note on/off
+  if (onOff) {
+    // note on
+    MIDI.sendNoteOn(midiNoteNum,127,1);
+  } else {
+    // note off
+    MIDI.sendNoteOn(midiNoteNum,0,1);
   }
 }
 
@@ -161,6 +186,7 @@ void loop() {
   if (gateOn == 0) {
     if (currentMillis - previousMillis > gateOff_ms) {
       previousMillis = currentMillis;
+      getControlVoltage();
       setGate(1);
     }
   }
