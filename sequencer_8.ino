@@ -12,6 +12,7 @@ int gateOff_ms = 100;
 int gateOn_ms = 0;
 int gateOn = 0;
 int midiNoteNum = 0;
+int lastMidiNoteNum = 0;
 
 #define STEP1_PIN 2
 #define STEP2_PIN 3
@@ -199,5 +200,13 @@ void loop() {
       }
     }
   }
-
+  if (sequencerStopped == 1) {
+    // update midi when sequencer is stopped
+    getControlVoltage();
+    if (midiNoteNum != lastMidiNoteNum) {
+      MIDI.sendNoteOn(midiNoteNum,127,1); // new note on
+      MIDI.sendNoteOn(lastMidiNoteNum,0,1); // old note off
+    }
+  }
+  lastMidiNoteNum = midiNoteNum;
 }
