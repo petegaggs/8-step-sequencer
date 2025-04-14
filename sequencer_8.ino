@@ -8,6 +8,7 @@ MIDI_CREATE_DEFAULT_INSTANCE();
 int currentStep = 8;
 unsigned long previousMillis = 0;
 int sequencerStopped = 0;
+int tempo;
 int gateOff_ms = 100;
 int gateOn_ms = 0;
 int gateOn = 0;
@@ -134,10 +135,12 @@ int getTempo() {
   // read the tempo pot
   int potVal = analogRead(TEMPO_PIN);
   int ret;
-  if (potVal < 5) {
+  if ((potVal < 5) && (sequencerStopped == 0)) {
+    sendNote(1);
     sequencerStopped = 1; // stopped
-  }
-  else {
+    lastMidiNoteNum = midiNoteNum;
+  } else if ((potVal > 10) && (sequencerStopped == 1)) {
+    sendNote(0);
     sequencerStopped = 0;
   }
   return (1050 - potVal);
@@ -177,36 +180,25 @@ void sendNote(int onOff) {
 
 void loop() {
   unsigned long currentMillis = millis();
-  gateOn_ms = getTempo();
-  if (gateOn_ms < 50) {
-    gateOff_ms = gateOn_ms;
-  }
-  else {
-    gateOff_ms = 50;
-  }
-  if (gateOn == 0) {
-    if (currentMillis - previousMillis > gateOff_ms) {
+  tempo = getTempo();
+  if (sequencerStopped == 0) {
+    if (currentMillis - previousMillis > tempo) {
       previousMillis = currentMillis;
+      setNewStep();
+      //delay(10);
       getControlVoltage();
       setGate(1);
+      delay(5); // short gate on
+      setGate(0);
     }
-  }
-  else {
-    if (currentMillis - previousMillis > gateOn_ms) {
-      previousMillis = currentMillis;
-      if (sequencerStopped == 0) {
-        setGate(0);
-        setNewStep();
-      }
-    }
-  }
-  if (sequencerStopped == 1) {
+  } else {
     // update midi when sequencer is stopped
     getControlVoltage();
     if (midiNoteNum != lastMidiNoteNum) {
       MIDI.sendNoteOn(midiNoteNum,127,1); // new note on
       MIDI.sendNoteOn(lastMidiNoteNum,0,1); // old note off
+      lastMidiNoteNum = midiNoteNum;
+      delay(50);
     }
   }
-  lastMidiNoteNum = midiNoteNum;
 }
