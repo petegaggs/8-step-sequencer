@@ -47,7 +47,7 @@ void setup() {
   pinMode(SEL0_PIN, OUTPUT);
   pinMode(SEL1_PIN, OUTPUT);
   pinMode(SEL2_PIN, OUTPUT);
-  digitalWrite(STEP1_PIN, LOW);     
+  digitalWrite(STEP1_PIN, HIGH);     
   digitalWrite(STEP2_PIN, LOW);     
   digitalWrite(STEP3_PIN, LOW);     
   digitalWrite(STEP4_PIN, LOW);     
@@ -61,7 +61,6 @@ void setup() {
   digitalWrite(SEL2_PIN, LOW);
   pinMode(STEP_RESET_PIN, INPUT);
   pinMode(GATE_EN_PIN, INPUT);
-  setNewStep(); // get things started
 }
 
 void setAnalogMux() {
@@ -185,7 +184,6 @@ void loop() {
     if (currentMillis - previousMillis > tempo) {
       previousMillis = currentMillis;
       setNewStep();
-      //delay(10);
       getControlVoltage();
       setGate(1);
       delay(5); // short gate on
